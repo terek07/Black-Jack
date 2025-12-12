@@ -32,19 +32,16 @@ players = []
 dealer_hand = []
 
 def random_card():
-    id = random.randrange(0, 53)
+    id = random.randrange(0, 52)
     if id in used_carts:
         return random_card()
     else:
         used_carts.add(id)
         return DECK[id]
         
-players_amount = int(input("How many players? "))
-for _ in range(players_amount):# deal starting hand
-    player_hand.append(random_card())
-    dealer_hand.append(random_card())
 def display_hand(hand, dealer=False):
     if dealer:
+        print("Dealer: ")
         print(hand[0][0])
         return None
     value = 0
@@ -53,11 +50,36 @@ def display_hand(hand, dealer=False):
         value += card[1]
     print("Value: ", value)
     return value
-display_hand(player_hand)
-display_hand(dealer_hand, True)
     
-
-
-
-
-
+def start_game():
+    players_amount = int(input("How many players? "))
+    for _ in range(players_amount):# deal starting hand
+        players.append([random_card(), random_card()])
+    dealer_hand = [random_card(), random_card()]   
+    print("Dealer's hand: ")
+    display_hand(dealer_hand, True)
+    for i in range(0, players_amount):
+        print("Player ", i + 1)
+        print("Your hand: ")
+        if display_hand(players[i]) == 21:
+            print("It's black jack! You won!")
+            continue
+        
+        while(True):
+            action = input("Your action(h - hit, s - stand): ")
+            if action == 's':
+                break
+            if action == 'h':
+                next_card = random_card()
+                print("New card: ", next_card[0])
+                players[i].append(next_card)
+                if display_hand(players[i]) > 21:
+                    print("You Busted!")
+                    break
+            else:
+                print("Error")
+        
+        
+start_game()
+    
+    
