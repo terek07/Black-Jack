@@ -97,8 +97,9 @@ class BlackjackGame:
     def turn(self, player):
         print(f"{player.name}'s turn")
         print("Your hand: ")
-        if player.display_hand() == 21:
-            print("It's blackjack! You won!")
+        value = player.display_hand()
+        if value == 21:
+            print(f"It's blackjack! You won your bet times 1.5 - {player.bet * 1.5}!")
             return
 
         while True:
@@ -109,14 +110,34 @@ class BlackjackGame:
                 next_card = self.deck.draw_card()
                 print("New card: ", next_card.name)
                 player.hand.append(next_card)
-                if player.display_hand() == 21:
+                value = player.display_hand()
+
+                if value == 21:
                     print("You reached maximum points!")
                     return
-                if player.display_hand() > 21:
-                    print("You Busted!")
+                if value > 21:
+                    print(f"You Busted!\nYou lost your bet - {player.bet}")
                     return
             else:
                 print("Invalid action. Please choose 'h' or 's'.")
+    def dealers_turn(self):
+        print("Dealer's turn")
+        value = self.dealer.display_hand()
+        while value < 17:
+            next_card = self.deck.draw_card()
+            print("New card: ", next_card.name)
+            self.dealer.hand.append(next_card)
+            value = self.dealer.display_hand()
+            if value == 21:
+                print("Dealer reached maximum points!")
+                return
+            if value > 21:
+                print(f"dealer Busted!")
+                return
+        print(f"Dealer's score is: {value}")
+        return
+
+
 
     def start_game(self):
 
@@ -125,11 +146,17 @@ class BlackjackGame:
 
         print("Dealer's hand: ")
         self.dealer.display_hand(dealer=True)
-
         for player in self.players:
             self.turn(player)
+        self.dealers_turn()
+#TODO: don't disply dealer's bet, check who won
 
 
 if __name__ == "__main__":
+    # test_game = BlackjackGame()
+    # test_player = Player("test 1")
+    # test_player.hand = [test_game.deck.cards[0], test_game.deck.cards[10]]
+    # test_player.bet = 10
+    # test_game.turn(test_player)
     game = BlackjackGame()
     game.start_game()
