@@ -70,6 +70,7 @@ class Player:
                     break
             hand_value += card_value
         print("Value: ", hand_value)
+        print("Your bet:", self.bet)
         return hand_value
 
 
@@ -92,6 +93,7 @@ class BlackjackGame:
             player.hand = [self.deck.draw_card(), self.deck.draw_card()]
             self.players.append(player)
         self.dealer.hand = [self.deck.draw_card(), self.deck.draw_card()]
+
     def turn(self, player):
         print(f"{player.name}'s turn")
         print("Your hand: ")
