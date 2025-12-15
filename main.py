@@ -107,6 +107,9 @@ class BlackjackGame:
                 next_card = self.deck.draw_card()
                 print("New card: ", next_card.name)
                 player.hand.append(next_card)
+                if player.display_hand() == 21:
+                    print("You reached maximum points!")
+                    return
                 if player.display_hand() > 21:
                     print("You Busted!")
                     return
