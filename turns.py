@@ -2,15 +2,21 @@ from enums import TurnResult
 
 
 class TurnManager:
-    def hit(self, player, deck):
-        player.hand.add(deck.draw())
-        if player.hand.is_blackjack:
+    def hit(self, bet_hand, deck):
+        bet_hand.hand.add(deck.draw())
+
+        if bet_hand.hand.is_blackjack:
+            bet_hand.is_finished = True
             return TurnResult.BLACKJACK
-        if player.hand.is_bust:
+
+        if bet_hand.hand.is_bust:
+            bet_hand.is_finished = True
             return TurnResult.BUST
+
         return TurnResult.CONTINUE
 
-    def stand(self):
+    def stand(self, bet_hand):
+        bet_hand.is_finished = True
         return TurnResult.STAND
 
     def dealer_play(self, dealer, deck):

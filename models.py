@@ -38,8 +38,14 @@ class Hand:
 
 
 @dataclass
-class Player:
-    name: str
+class BetHand:
     hand: Hand = field(default_factory=Hand)
     bet: int = 0
+    is_finished: bool = False
+
+
+@dataclass
+class Player:
+    name: str
+    hands: List[BetHand] = field(default_factory=list)
     insurance_bet: int = 0
