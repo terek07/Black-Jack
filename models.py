@@ -42,6 +42,7 @@ class BetHand:
     hand: Hand = field(default_factory=Hand)
     bet: int = 0
     is_finished: bool = False
+    doubled: bool = False
 
 
 @dataclass

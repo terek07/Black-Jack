@@ -6,6 +6,7 @@ class TurnResult(Enum):
     BUST = "bust"
     BLACKJACK = "blackjack"
     STAND = "stand"
+    DOUBLE = "double"
 
 
 class GameResult(Enum):
