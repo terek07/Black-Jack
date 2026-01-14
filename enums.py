@@ -1,11 +1,6 @@
 from enum import Enum
 
 
-class Action(Enum):
-    HIT = "hit"
-    STAND = "stand"
-
-
 class TurnResult(Enum):
     CONTINUE = "continue"
     BUST = "bust"

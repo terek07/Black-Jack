@@ -1,47 +1,45 @@
-from typing import List
-from models import Deck, Player
-from enums import TurnResult, GameResult
+from deck import Deck
+from models import Player
+from insurance import InsuranceManager
+from turns import TurnManager
+from payouts import PayoutResolver
 
 
 class BlackjackGame:
-    def __init__(self, players: List[Player]):
+    def __init__(self, players: list[Player]):
         self.deck = Deck()
         self.players = players
         self.dealer = Player("Dealer")
+
+        self.turns = TurnManager()
+        self.insurance = InsuranceManager()
+        self.payouts = PayoutResolver()
+
         self._initial_deal()
 
     def _initial_deal(self):
         for _ in range(2):
-            for player in self.players:
-                player.hand.add_card(self.deck.draw())
-            self.dealer.hand.add_card(self.deck.draw())
+            for p in self.players:
+                p.hand.add(self.deck.draw())
+            self.dealer.hand.add(self.deck.draw())
 
-    def hit(self, player: Player) -> TurnResult:
-        player.hand.add_card(self.deck.draw())
+    @property
+    def dealer_has_blackjack(self) -> bool:
+        return self.dealer.hand.is_blackjack
 
-        if player.hand.is_blackjack:
-            return TurnResult.BLACKJACK
-        if player.hand.is_bust:
-            return TurnResult.BUST
-        return TurnResult.CONTINUE
+    def resolve_insurance(self) -> dict:
+        results = {}
+        for p in self.players:
+            results[p.name] = self.insurance.resolve(
+                p, self.dealer_has_blackjack
+            )
+        return results
 
-    def stand(self, player: Player) -> TurnResult:
-        return TurnResult.STAND
+    def play_dealer(self):
+        self.turns.dealer_play(self.dealer, self.deck)
 
-    def dealer_play(self):
-        while self.dealer.hand.value < 17:
-            self.dealer.hand.add_card(self.deck.draw())
-
-    def settle_bet(self, player: Player) -> GameResult:
-        player_value = player.hand.value
-        dealer_value = self.dealer.hand.value
-
-        if player.hand.is_bust:
-            return GameResult.LOSE
-        if self.dealer.hand.is_bust:
-            return GameResult.WIN
-        if player_value > dealer_value:
-            return GameResult.WIN
-        if player_value < dealer_value:
-            return GameResult.LOSE
-        return GameResult.PUSH
+    def settle_main_bets(self) -> dict:
+        return {
+            p.name: self.payouts.resolve_main(p, self.dealer)
+            for p in self.players
+        }
