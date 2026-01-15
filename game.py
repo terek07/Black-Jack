@@ -36,7 +36,7 @@ class BlackjackGame:
 
     @property
     def dealer_has_blackjack(self) -> bool:
-        return len(self.dealer_hand.cards) == 2 and self.dealer_hand.value == 21
+        return self.dealer_hand.is_blackjack
 
     def split_hand(self, player: Player, hand_index: int):
         bet_hand = player.hands[hand_index]

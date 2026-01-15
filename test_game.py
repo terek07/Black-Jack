@@ -135,7 +135,8 @@ class TestBlackjackGame:
         for name in ["Alice", "Bob"]:
             assert len(results[name]) > 0
             for res in results[name]:
-                assert res in GameResult
+                assert res.result in GameResult
+                assert isinstance(res.payout, int)
 
     def test_full_game_sequence(self):
         players = [("Alice", 50)]
@@ -156,4 +157,4 @@ class TestBlackjackGame:
         results = game.settle_all_bets()
         assert "Alice" in results
         assert len(results["Alice"]) > 0
-        assert results["Alice"][0] in GameResult
+        assert results["Alice"][0].result in GameResult
