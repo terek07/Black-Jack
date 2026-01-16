@@ -14,6 +14,7 @@ class BlackjackGame:
         self.deck = Deck()
         self.players = []
         self.dealer_hand = Hand()
+        self.current_player_index = 0
 
         self.insurance = InsuranceManager()
         self.split = SplitManager()
@@ -65,6 +66,29 @@ class BlackjackGame:
             p.name: self.insurance.resolve(p, self.dealer_has_blackjack)
             for p in self.players
         }
+
+    def resolve_bets(self):
+        results = []
+        for p in self.players:
+            player_results = []
+            for hand in p.hands:
+                outcome = self.payouts.resolve_hand(hand, self.dealer_hand)
+                player_results.append(outcome.result)
+                
+                from enums import GameResult
+                if outcome.result in (GameResult.WIN, GameResult.BLACKJACK_WIN):
+                    payout = hand.bet * 2
+                    if hand.hand.is_blackjack:
+                        payout = int(hand.bet * 2.5)
+                    p.balance += payout
+                elif outcome.result == GameResult.PUSH:
+                    p.balance += hand.bet
+            
+            results.append(player_results)
+        return results
+
+    def place_insurance(self, player: Player, amount: int):
+        return self.insurance.place(player, amount)
 
     def settle_all_bets(self) -> dict:
         results = {}

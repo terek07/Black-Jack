@@ -50,3 +50,4 @@ class Player:
     name: str
     hands: List[BetHand] = field(default_factory=list)
     insurance_bet: int = 0
+    balance: int = 1000

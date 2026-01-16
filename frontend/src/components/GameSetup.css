@@ -1,0 +1,40 @@
+.game-setup {
+  max-width: 600px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2rem;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.game-setup h2 {
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.player-input {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.player-input input {
+  flex: 1;
+}
+
+.player-input input[type="number"] {
+  max-width: 120px;
+}
+
+.setup-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
