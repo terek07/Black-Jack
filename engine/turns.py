@@ -1,4 +1,4 @@
-from enums import TurnResult
+from engine.enums import TurnResult
 
 
 class TurnManager:

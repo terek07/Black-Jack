@@ -1,5 +1,5 @@
 import random
-from models import Card
+from engine.models import Card
 
 
 class Deck:

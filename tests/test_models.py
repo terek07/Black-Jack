@@ -1,5 +1,5 @@
 import pytest
-from models import Card, Hand
+from engine.models import Card, Hand
 
 
 class TestHandValueCalculation:

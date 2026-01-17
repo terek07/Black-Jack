@@ -7,9 +7,9 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from game import BlackjackGame
-from models import Card, BetHand
-from enums import GameResult
+from engine.game import BlackjackGame
+from engine.models import Card, BetHand
+from engine.enums import GameResult
 
 app = FastAPI(title="Blackjack Game API")
 
@@ -207,7 +207,7 @@ async def resolve_game(game_id: str):
     game = games[game_id]
     
     game.play_dealer()
-    game.resolve_insurance()
+    insurance_results = game.resolve_insurance()
     results = game.resolve_bets()
     
     response = get_game_state(game_id, show_dealer_cards=True)
@@ -215,7 +215,21 @@ async def resolve_game(game_id: str):
     response_dict["results"] = [
         {
             "player_name": player.name,
-            "hand_results": [r.value for r in player_results]
+            "final_balance": player.balance,
+            "insurance_payout": insurance_results.get(player.name, 0),
+            "total_payout": sum(r.payout for r in player_results) + insurance_results.get(player.name, 0),
+            "hand_results": [
+                {
+                    "hand_index": idx,
+                    "result": r.result.value,
+                    "payout": r.payout,
+                    "bet": hand.bet,
+                    "hand_value": hand.hand.value,
+                    "is_blackjack": hand.hand.is_blackjack,
+                    "is_bust": hand.hand.is_bust,
+                }
+                for idx, (r, hand) in enumerate(zip(player_results, player.hands))
+            ],
         }
         for player, player_results in zip(game.players, results)
     ]

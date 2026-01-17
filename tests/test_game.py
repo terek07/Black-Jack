@@ -1,7 +1,7 @@
 import pytest
-from models import Card
-from game import BlackjackGame
-from enums import TurnResult, GameResult
+from engine.models import Card
+from engine.game import BlackjackGame
+from engine.enums import TurnResult, GameResult
 
 
 class TestBlackjackGame:

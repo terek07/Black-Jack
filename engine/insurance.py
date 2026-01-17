@@ -1,4 +1,4 @@
-from models import Player
+from engine.models import Player
 
 
 class InsuranceManager:

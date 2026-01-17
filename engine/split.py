@@ -1,4 +1,4 @@
-from models import BetHand, Hand
+from engine.models import BetHand, Hand
 
 
 class SplitManager:

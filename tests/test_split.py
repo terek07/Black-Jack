@@ -1,6 +1,6 @@
 import pytest
-from models import Card, BetHand, Hand
-from split import SplitManager
+from engine.models import Card, BetHand, Hand
+from engine.split import SplitManager
 
 
 class TestSplitManager:

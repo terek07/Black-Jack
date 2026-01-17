@@ -28,6 +28,11 @@
   backdrop-filter: blur(10px);
 }
 
+.player-card.active {
+  border: 2px solid #4CAF50;
+  box-shadow: 0 0 12px rgba(76, 175, 80, 0.4);
+}
+
 .player-card h3 {
   margin-bottom: 0.5rem;
   font-size: 1.5rem;
@@ -135,6 +140,95 @@
 .result {
   margin: 0.5rem 0;
   font-size: 1.1rem;
+}
+
+.result-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  text-align: left;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.payout {
+  font-weight: bold;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+}
+
+.payout.win {
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.payout.loss {
+  color: #842029;
+  background: #f8d7da;
+}
+
+.payout.push {
+  color: #664d03;
+  background: #fff3cd;
+}
+
+.result-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+  color: #ddd;
+  margin-bottom: 0.5rem;
+}
+
+.hand-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.hand-result {
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.hand-label {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.hand-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-transform: capitalize;
+}
+
+.badge.highlight {
+  background: #4CAF50;
+  color: #0f1b0f;
+  border-color: #4CAF50;
+}
+
+.badge.danger {
+  background: #d32f2f;
+  border-color: #d32f2f;
 }
 
 @media (max-width: 768px) {

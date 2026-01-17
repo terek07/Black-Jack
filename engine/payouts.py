@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from enums import GameResult
+from engine.enums import GameResult
 
 
 @dataclass(frozen=True)

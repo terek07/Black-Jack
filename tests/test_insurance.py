@@ -1,6 +1,6 @@
 import pytest
-from models import Card, Hand
-from insurance import InsuranceManager
+from engine.models import Card, Hand
+from engine.insurance import InsuranceManager
 
 
 class TestInsuranceManager:

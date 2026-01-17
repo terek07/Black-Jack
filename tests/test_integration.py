@@ -5,10 +5,10 @@ These tests verify complete game flows from initial deal through payout,
 including interactions between multiple components (game, managers, models).
 """
 import pytest
-from models import Card, Hand, BetHand, Player
-from game import BlackjackGame
-from enums import TurnResult, GameResult
-from payouts import HandOutcome
+from engine.models import Card, Hand, BetHand, Player
+from engine.game import BlackjackGame
+from engine.enums import TurnResult, GameResult
+from engine.payouts import HandOutcome
 
 
 class TestBlackjackEdgeCases:

@@ -8,6 +8,14 @@ function GameBoard({ gameId, initialGameState, onReset }) {
   const [insuranceAmount, setInsuranceAmount] = useState('');
   const [showInsurance, setShowInsurance] = useState(false);
 
+  const formatCurrency = (amount) => {
+    if (amount === 0) return '$0';
+    const prefix = amount > 0 ? '+' : '-';
+    return `${prefix}$${Math.abs(amount)}`;
+  };
+
+  const formatResultLabel = (result) => result.replace(/_/g, ' ');
+
   useEffect(() => {
     if (initialGameState) {
       const dealerUpCard = initialGameState.dealer_hand[0];
@@ -16,6 +24,12 @@ function GameBoard({ gameId, initialGameState, onReset }) {
       }
     }
   }, [initialGameState]);
+
+  useEffect(() => {
+    if (gameState?.game_over && !gameState.results) {
+      resolveGame();
+    }
+  }, [gameState]);
 
   const makeAction = async (action, playerIndex, handIndex = 0, extraData = {}) => {
     setLoading(true);
@@ -28,10 +42,6 @@ function GameBoard({ gameId, initialGameState, onReset }) {
       });
       const data = await response.json();
       setGameState(data);
-      
-      if (data.game_over) {
-        await resolveGame();
-      }
     } catch (error) {
       console.error(`Error during ${action}:`, error);
     } finally {
@@ -41,6 +51,7 @@ function GameBoard({ gameId, initialGameState, onReset }) {
 
   const resolveGame = async () => {
     try {
+      setLoading(true);
       const response = await fetch(`http://localhost:8000/api/game/${gameId}/resolve`, {
         method: 'POST'
       });
@@ -48,6 +59,8 @@ function GameBoard({ gameId, initialGameState, onReset }) {
       setGameState(data);
     } catch (error) {
       console.error('Error resolving game:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,7 +104,10 @@ function GameBoard({ gameId, initialGameState, onReset }) {
 
       <div className="players-section">
         {gameState.players.map((player, playerIdx) => (
-          <div key={playerIdx} className="player-card">
+          <div 
+            key={playerIdx} 
+            className={`player-card ${playerIdx === gameState.current_player_index ? 'active' : ''}`}
+          >
             <h3>{player.name}</h3>
             <div className="player-info">
               <span className="balance">Balance: ${player.balance}</span>
@@ -104,7 +120,7 @@ function GameBoard({ gameId, initialGameState, onReset }) {
               <div className="insurance-prompt">
                 <input
                   type="number"
-                  placeholder="Insurance amount"
+                  placeholder="Insurance amount ($)"
                   value={insuranceAmount}
                   onChange={(e) => setInsuranceAmount(e.target.value)}
                   max={Math.floor(player.hands[0].bet / 2)}
@@ -194,8 +210,34 @@ function GameBoard({ gameId, initialGameState, onReset }) {
         <div className="game-over">
           <h2>Game Over!</h2>
           {gameState.results && gameState.results.map((result, idx) => (
-            <div key={idx} className="result">
-              <strong>{result.player_name}:</strong> {result.hand_results.join(', ')}
+            <div key={idx} className="result-card">
+              <div className="result-header">
+                <strong>{result.player_name}</strong>
+                <span className={`payout ${result.total_payout > 0 ? 'win' : result.total_payout < 0 ? 'loss' : 'push'}`}>
+                  {result.total_payout > 0 ? 'WON' : result.total_payout < 0 ? 'LOST' : 'PUSH'} {formatCurrency(result.total_payout)}
+                </span>
+              </div>
+              <div className="result-meta">
+                <span>Final Balance: ${result.final_balance}</span>
+                {result.insurance_payout !== 0 && (
+                  <span>Insurance: {formatCurrency(result.insurance_payout)}</span>
+                )}
+              </div>
+              <div className="hand-results">
+                {result.hand_results.map((handResult) => (
+                  <div key={handResult.hand_index} className="hand-result">
+                    <div className="hand-label">Hand {handResult.hand_index + 1}</div>
+                    <div className="hand-summary">
+                      <span className="badge">{formatResultLabel(handResult.result)}</span>
+                      <span>Bet: ${handResult.bet}</span>
+                      <span>Payout: {formatCurrency(handResult.payout)}</span>
+                      <span>Value: {handResult.hand_value}</span>
+                      {handResult.is_blackjack && <span className="badge highlight">Blackjack</span>}
+                      {handResult.is_bust && <span className="badge danger">Bust</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
           <button className="primary" onClick={onReset}>

@@ -44,7 +44,7 @@ function GameSetup({ onStartGame }) {
             />
             <input
               type="number"
-              placeholder="Bet"
+              placeholder="Bet ($)"
               value={player.bet}
               onChange={(e) => updatePlayer(index, 'bet', e.target.value)}
               min="1"

@@ -1,7 +1,7 @@
 import pytest
-from models import Card, Hand, BetHand
-from payouts import PayoutResolver, HandOutcome
-from enums import GameResult
+from engine.models import Card, Hand, BetHand
+from engine.payouts import PayoutResolver, HandOutcome
+from engine.enums import GameResult
 
 
 class TestPayoutResolver:

@@ -1,6 +1,6 @@
 import pytest
-from models import Card, Hand, BetHand, Player
-from deck import Deck
+from engine.models import Card, Hand, BetHand, Player
+from engine.deck import Deck
 
 
 @pytest.fixture

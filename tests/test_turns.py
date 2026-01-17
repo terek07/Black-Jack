@@ -1,7 +1,7 @@
 import pytest
-from models import Card, BetHand, Hand
-from turns import TurnManager
-from enums import TurnResult
+from engine.models import Card, BetHand, Hand
+from engine.turns import TurnManager
+from engine.enums import TurnResult
 
 
 class TestTurnManager:
@@ -75,7 +75,7 @@ class TestTurnManager:
         hand.hand.add(Card("4", 4))
         # Hand value: 9, doubling should not bust with any card
         
-        from deck import Deck
+        from engine.deck import Deck
         deck = Deck()
         result = tm.double(hand, deck)
         # Result should be DOUBLE (not BUST) since max we can get is 9 + 10 = 19
@@ -88,7 +88,7 @@ class TestTurnManager:
         dealer_hand.add(Card("2", 2))
         # Dealer hand value is 7, should continue hitting
         
-        from deck import Deck
+        from engine.deck import Deck
         deck = Deck()
         cards_before = len(deck.cards)
         tm.dealer_play(dealer_hand, deck)
@@ -103,7 +103,7 @@ class TestTurnManager:
         dealer_hand.add(Card("7", 7))
         # Dealer hand value is 17, should stop
         
-        from deck import Deck
+        from engine.deck import Deck
         deck = Deck()
         cards_before = len(deck.cards)
         tm.dealer_play(dealer_hand, deck)

@@ -1,9 +1,10 @@
-from deck import Deck
-from models import Player, BetHand, Hand
-from insurance import InsuranceManager
-from split import SplitManager
-from turns import TurnManager
-from payouts import PayoutResolver
+from engine.deck import Deck
+from engine.enums import TurnResult
+from engine.models import Player, BetHand, Hand
+from engine.insurance import InsuranceManager
+from engine.split import SplitManager
+from engine.turns import TurnManager
+from engine.payouts import PayoutResolver
 
 
 class BlackjackGame:
@@ -28,12 +29,33 @@ class BlackjackGame:
             self.players.append(p)
 
         self._initial_deal()
+        self._auto_finish_natural_blackjacks()
+        self._advance_turn_if_needed()
 
     def _initial_deal(self):
         for _ in range(2):
             for p in self.players:
                 p.hands[0].hand.add(self.deck.draw())
             self.dealer_hand.add(self.deck.draw())
+
+    def _advance_turn_if_needed(self):
+        if self.current_player_index is None:
+            return
+
+        while self.current_player_index < len(self.players):
+            current_player = self.players[self.current_player_index]
+            if any(not hand.is_finished for hand in current_player.hands):
+                return
+            self.current_player_index += 1
+
+        if self.current_player_index >= len(self.players):
+            self.current_player_index = None
+
+    def _auto_finish_natural_blackjacks(self):
+        for player in self.players:
+            for bet_hand in player.hands:
+                if bet_hand.hand.is_blackjack:
+                    bet_hand.is_finished = True
 
     @property
     def dealer_has_blackjack(self) -> bool:
@@ -50,22 +72,30 @@ class BlackjackGame:
         player.hands.extend([h1, h2])
 
     def hit(self, player: Player, hand_index: int):
-        return self.turns.hit(player.hands[hand_index], self.deck)
+        result = self.turns.hit(player.hands[hand_index], self.deck)
+        self._advance_turn_if_needed()
+        return result
 
     def stand(self, player: Player, hand_index: int):
-        return self.turns.stand(player.hands[hand_index])
+        result = self.turns.stand(player.hands[hand_index])
+        self._advance_turn_if_needed()
+        return result
 
     def double(self, player: Player, hand_index: int):
-        return self.turns.double(player.hands[hand_index], self.deck)
+        result = self.turns.double(player.hands[hand_index], self.deck)
+        self._advance_turn_if_needed()
+        return result
 
     def play_dealer(self):
         self.turns.dealer_play(self.dealer_hand, self.deck)
 
     def resolve_insurance(self) -> dict:
-        return {
-            p.name: self.insurance.resolve(p, self.dealer_has_blackjack)
-            for p in self.players
-        }
+        results = {}
+        for p in self.players:
+            payout = self.insurance.resolve(p, self.dealer_has_blackjack)
+            p.balance += payout
+            results[p.name] = payout
+        return results
 
     def resolve_bets(self):
         results = []
@@ -73,17 +103,8 @@ class BlackjackGame:
             player_results = []
             for hand in p.hands:
                 outcome = self.payouts.resolve_hand(hand, self.dealer_hand)
-                player_results.append(outcome.result)
-                
-                from enums import GameResult
-                if outcome.result in (GameResult.WIN, GameResult.BLACKJACK_WIN):
-                    payout = hand.bet * 2
-                    if hand.hand.is_blackjack:
-                        payout = int(hand.bet * 2.5)
-                    p.balance += payout
-                elif outcome.result == GameResult.PUSH:
-                    p.balance += hand.bet
-            
+                p.balance += outcome.payout
+                player_results.append(outcome)
             results.append(player_results)
         return results
 
