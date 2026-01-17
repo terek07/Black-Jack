@@ -5,7 +5,9 @@
 ### Terminal 1 - Backend
 ```bash
 pip install -r backend/requirements.txt
-./start-backend.sh
+cd backend
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
 ```
 The API will run on http://localhost:8000
 

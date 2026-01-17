@@ -162,3 +162,52 @@ class TestPayoutResolver:
 
         outcome = pr.resolve_hand(player_hand, dealer_hand)
         assert outcome == HandOutcome(GameResult.PUSH, 0)
+
+    # --- moved from tests/test_payouts_extra.py ---
+    def test_blackjack_payout_odd_bet_3_2(self):
+        pr = PayoutResolver()
+        dealer_hand = Hand()
+        dealer_hand.add(Card("10", 10))
+        dealer_hand.add(Card("10", 10))
+
+        player_hand = BetHand(bet=5)
+        player_hand.hand.add(Card("Ace", 11))
+        player_hand.hand.add(Card("King", 10))
+
+        outcome = pr.resolve_hand(player_hand, dealer_hand)
+        # (5 * 3) // 2 == 7
+        assert outcome == HandOutcome(GameResult.BLACKJACK_WIN, 7)
+
+    def test_double_increases_payout_on_win(self):
+        pr = PayoutResolver()
+        dealer_hand = Hand()
+        dealer_hand.add(Card("10", 10))
+        dealer_hand.add(Card("7", 7))
+
+        player_hand = BetHand(bet=10)
+        # simulate double: double() multiplies bet and sets doubled flag
+        player_hand.bet *= 2
+        player_hand.doubled = True
+        player_hand.hand.add(Card("10", 10))
+        player_hand.hand.add(Card("9", 9))
+
+        outcome = pr.resolve_hand(player_hand, dealer_hand)
+        # player hand 19 vs dealer 17 -> win by bet amount (20)
+        assert outcome == HandOutcome(GameResult.WIN, 20)
+
+    def test_double_increases_loss_on_lose(self):
+        pr = PayoutResolver()
+        dealer_hand = Hand()
+        dealer_hand.add(Card("10", 10))
+        dealer_hand.add(Card("9", 9))
+
+        player_hand = BetHand(bet=15)
+        # simulate double
+        player_hand.bet *= 2
+        player_hand.doubled = True
+        player_hand.hand.add(Card("10", 10))
+        player_hand.hand.add(Card("8", 8))
+
+        outcome = pr.resolve_hand(player_hand, dealer_hand)
+        # player 18 vs dealer 19 -> lose by doubled bet (-30)
+        assert outcome == HandOutcome(GameResult.LOSE, -30)
