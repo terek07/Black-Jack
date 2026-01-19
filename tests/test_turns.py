@@ -12,12 +12,16 @@ class TestTurnManager:
         assert result in [TurnResult.CONTINUE, TurnResult.BUST]
         assert len(hand.hand.cards) == 3  # Initial 2 + 1 hit
 
-    def test_hit_bust_ends_hand(self, fresh_deck):
+    def test_hit_bust_ends_hand(self):
         tm = TurnManager()
         hand = BetHand()
         hand.hand.add(Card("10", 10))
         hand.hand.add(Card("10", 10))
-        result = tm.hit(hand, fresh_deck)
+        # Create deterministic deck where the next drawn card will cause a bust (value >=2)
+        from engine.deck import Deck
+        deck = Deck()
+        deck.cards = [Card("2", 2)]
+        result = tm.hit(hand, deck)
         assert result == TurnResult.BUST
         assert hand.is_finished is True
 

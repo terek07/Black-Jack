@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 import sys
 import os
+import threading
+import copy
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -22,6 +24,10 @@ app.add_middleware(
 )
 
 games = {}
+# Cache resolve responses to make /resolve idempotent (avoid double-applying payouts)
+_resolve_response_cache = {}
+# Per-game locks to avoid concurrent resolve executions
+_resolve_locks = {}
 
 class PlayerInput(BaseModel):
     name: str
@@ -203,38 +209,65 @@ async def place_insurance(request: InsuranceRequest):
 async def resolve_game(game_id: str):
     if game_id not in games:
         raise HTTPException(status_code=404, detail="Game not found")
-    
-    game = games[game_id]
-    
-    game.play_dealer()
-    insurance_results = game.resolve_insurance()
-    results = game.resolve_bets()
-    
-    response = get_game_state(game_id, show_dealer_cards=True)
-    response_dict = response.dict()
-    response_dict["results"] = [
-        {
-            "player_name": player.name,
-            "final_balance": player.balance,
-            "insurance_payout": insurance_results.get(player.name, 0),
-            "total_payout": sum(r.payout for r in player_results) + insurance_results.get(player.name, 0),
-            "hand_results": [
-                {
-                    "hand_index": idx,
-                    "result": r.result.value,
-                    "payout": r.payout,
-                    "bet": hand.bet,
-                    "hand_value": hand.hand.value,
-                    "is_blackjack": hand.hand.is_blackjack,
-                    "is_bust": hand.hand.is_bust,
-                }
-                for idx, (r, hand) in enumerate(zip(player_results, player.hands))
-            ],
-        }
-        for player, player_results in zip(game.players, results)
-    ]
-    
-    return response_dict
+
+    # Fast path: return cached response if already resolved
+    cached = _resolve_response_cache.get(game_id)
+    if cached is not None:
+        return copy.deepcopy(cached)
+
+    # Ensure a lock exists for this game
+    lock = _resolve_locks.setdefault(game_id, threading.Lock())
+
+    # Acquire lock to perform resolve exactly once
+    acquired = lock.acquire(timeout=5.0)
+    if not acquired:
+        # If we couldn't acquire lock in reasonable time, try returning cached response
+        cached = _resolve_response_cache.get(game_id)
+        if cached is not None:
+            return copy.deepcopy(cached)
+        raise HTTPException(status_code=503, detail="Resolve in progress, try again")
+
+    try:
+        # Another thread may have resolved while we waited for lock — check again
+        cached = _resolve_response_cache.get(game_id)
+        if cached is not None:
+            return copy.deepcopy(cached)
+
+        game = games[game_id]
+
+        game.play_dealer()
+        insurance_results = game.resolve_insurance()
+        results = game.resolve_bets()
+
+        response = get_game_state(game_id, show_dealer_cards=True)
+        response_dict = response.dict()
+        response_dict["results"] = [
+            {
+                "player_name": player.name,
+                "final_balance": player.balance,
+                "insurance_payout": insurance_results.get(player.name, 0),
+                "total_payout": sum(r.payout for r in player_results) + insurance_results.get(player.name, 0),
+                "hand_results": [
+                    {
+                        "hand_index": idx,
+                        "result": r.result.value,
+                        "payout": r.payout,
+                        "bet": hand.bet,
+                        "hand_value": hand.hand.value,
+                        "is_blackjack": hand.hand.is_blackjack,
+                        "is_bust": hand.hand.is_bust,
+                    }
+                    for idx, (r, hand) in enumerate(zip(player_results, player.hands))
+                ],
+            }
+            for player, player_results in zip(game.players, results)
+        ]
+
+        # Cache a deep copy and return a deep copy
+        _resolve_response_cache[game_id] = copy.deepcopy(response_dict)
+        return copy.deepcopy(response_dict)
+    finally:
+        lock.release()
 
 @app.get("/api/game/{game_id}")
 async def get_game(game_id: str):

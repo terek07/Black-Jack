@@ -26,8 +26,9 @@ class TestBlackjackEdgeCases:
         p.hands[0].is_finished = True
         game.play_dealer()
         
-        results = game.settle_all_bets()
-        outcome = results["Alice"][0]
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        outcome = outcomes_by_name["Alice"][0]
         assert outcome.result == GameResult.BLACKJACK_WIN
         assert outcome.payout == 150  # 3:2 on 100
         assert p.hands[0].hand.is_blackjack is True
@@ -46,8 +47,9 @@ class TestBlackjackEdgeCases:
         
         p.hands[0].is_finished = True
         
-        results = game.settle_all_bets()
-        outcome = results["Bob"][0]
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        outcome = outcomes_by_name["Bob"][0]
         assert outcome.result == GameResult.LOSE
         assert outcome.payout == -100
         assert game.dealer_has_blackjack is True
@@ -64,8 +66,9 @@ class TestBlackjackEdgeCases:
         
         p.hands[0].is_finished = True
         
-        results = game.settle_all_bets()
-        outcome = results["Charlie"][0]
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        outcome = outcomes_by_name["Charlie"][0]
         assert outcome == HandOutcome(GameResult.PUSH, 0)
 
     def test_player_blackjack_beats_dealer_21_non_blackjack(self):
@@ -77,8 +80,9 @@ class TestBlackjackEdgeCases:
         game.dealer_hand.cards = [Card("10", 10), Card("5", 5), Card("6", 6)]  # 21, not blackjack
 
         p.hands[0].is_finished = True
-        results = game.settle_all_bets()
-        outcome = results["Daisy"][0]
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        outcome = outcomes_by_name["Daisy"][0]
         assert outcome.result == GameResult.BLACKJACK_WIN
         assert outcome.payout == 120  # 3:2 on 80
 
@@ -108,14 +112,15 @@ class TestSplitIntegration:
         p.hands[1].is_finished = True
         
         game.play_dealer()
-        results = game.settle_all_bets()
-        
-        assert len(results["Alice"]) == 2
-        assert results["Alice"][0].result == GameResult.LOSE  # Both bust
-        assert results["Alice"][0].payout == -50
-        assert results["Alice"][1].result == GameResult.LOSE
-        assert results["Alice"][1].payout == -50
-    
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+
+        assert len(outcomes_by_name["Alice"]) == 2
+        assert outcomes_by_name["Alice"][0].result == GameResult.LOSE  # Both bust
+        assert outcomes_by_name["Alice"][0].payout == -50
+        assert outcomes_by_name["Alice"][1].result == GameResult.LOSE
+        assert outcomes_by_name["Alice"][1].payout == -50
+
     def test_split_win_one_lose_one(self):
         """Split where one hand wins and one loses."""
         game = BlackjackGame([("Bob", 100)])
@@ -136,12 +141,13 @@ class TestSplitIntegration:
         # Dealer gets 19
         game.dealer_hand.cards = [Card("10", 10), Card("9", 9)]
         
-        results = game.settle_all_bets()
-        assert results["Bob"][0].result == GameResult.WIN   # 20 > 19
-        assert results["Bob"][0].payout == 100
-        assert results["Bob"][1].result == GameResult.LOSE  # 16 < 19
-        assert results["Bob"][1].payout == -100
-    
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Bob"][0].result == GameResult.WIN   # 20 > 19
+        assert outcomes_by_name["Bob"][0].payout == 100
+        assert outcomes_by_name["Bob"][1].result == GameResult.LOSE  # 16 < 19
+        assert outcomes_by_name["Bob"][1].payout == -100
+
     def test_split_then_double_on_one_hand(self):
         """Split then double down on one of the resulting hands."""
         game = BlackjackGame([("Charlie", 100)])
@@ -203,7 +209,7 @@ class TestInsuranceIntegration:
         
         insurance_result = game.resolve_insurance()
         assert insurance_result["Alice"] == 100  # 50 * 2 = 100
-    
+
     def test_insurance_loses_without_dealer_blackjack(self):
         """Insurance bet lost when dealer doesn't have blackjack."""
         game = BlackjackGame([("Bob", 100)])
@@ -218,26 +224,27 @@ class TestInsuranceIntegration:
         
         insurance_result = game.resolve_insurance()
         assert insurance_result["Bob"] == -50  # Lost insurance bet
-    
+
     def test_insurance_with_player_blackjack_dealer_blackjack(self):
         """Both have blackjack, insurance pays, main bet pushes."""
         game = BlackjackGame([("Charlie", 100)])
         p = game.players[0]
-        
+
         # Both have blackjack
         p.hands[0].hand.cards = [Card("Ace", 11), Card("Queen", 10)]
         game.dealer_hand.cards = [Card("Ace", 11), Card("King", 10)]
-        
+
         game.insurance.place(p, 50)
         p.hands[0].is_finished = True
-        
+
         # Check insurance
         insurance_result = game.resolve_insurance()
         assert insurance_result["Charlie"] == 100  # Win insurance
-        
+
         # Check main bet
-        bet_result = game.settle_all_bets()
-        assert bet_result["Charlie"][0] == HandOutcome(GameResult.PUSH, 0)  # Push on blackjack
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Charlie"][0] == HandOutcome(GameResult.PUSH, 0)  # Push on blackjack
 
 
 class TestDealerPlayEdgeCases:
@@ -289,12 +296,13 @@ class TestDealerPlayEdgeCases:
         game.dealer_hand.cards = [Card("10", 10), Card("7", 7), Card("6", 6)]
         assert game.dealer_hand.is_bust is True
         
-        results = game.settle_all_bets()
-        assert results["Charlie"][0].result == GameResult.WIN
-        assert results["Charlie"][0].payout == 50
-        assert results["Dave"][0].result == GameResult.WIN
-        assert results["Dave"][0].payout == 75
-    
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Charlie"][0].result == GameResult.WIN
+        assert outcomes_by_name["Charlie"][0].payout == 50
+        assert outcomes_by_name["Dave"][0].result == GameResult.WIN
+        assert outcomes_by_name["Dave"][0].payout == 75
+
     def test_dealer_hits_to_exactly_17(self):
         """Dealer hits from low value to exactly 17."""
         game = BlackjackGame([("Eve", 100)])
@@ -332,10 +340,11 @@ class TestMultiPlayerScenarios:
         # Dealer gets 18
         game.dealer_hand.cards = [Card("10", 10), Card("8", 8)]
         
-        results = game.settle_all_bets()
-        assert results["Winner"][0] == HandOutcome(GameResult.WIN, 100)   # 20 > 18
-        assert results["Loser"][0] == HandOutcome(GameResult.LOSE, -100)   # 16 < 18
-        assert results["Pusher"][0] == HandOutcome(GameResult.PUSH, 0)  # 18 = 18
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Winner"][0] == HandOutcome(GameResult.WIN, 100)   # 20 > 18
+        assert outcomes_by_name["Loser"][0] == HandOutcome(GameResult.LOSE, -100)   # 16 < 18
+        assert outcomes_by_name["Pusher"][0] == HandOutcome(GameResult.PUSH, 0)  # 18 = 18
 
     def test_mixed_blackjack_and_21_players(self):
         """One player has blackjack, another has 21 (non-blackjack) vs dealer 21."""
@@ -352,10 +361,11 @@ class TestMultiPlayerScenarios:
 
         game.dealer_hand.cards = [Card("10", 10), Card("5", 5), Card("6", 6)]  # Dealer 21, not blackjack
 
-        results = game.settle_all_bets()
-        assert results["BJ_Player"][0] == HandOutcome(GameResult.BLACKJACK_WIN, 150)  # 3:2 on 100
-        assert results["TwentyOne"][0] == HandOutcome(GameResult.PUSH, 0)  # 21 vs 21
-    
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["BJ_Player"][0] == HandOutcome(GameResult.BLACKJACK_WIN, 150)  # 3:2 on 100
+        assert outcomes_by_name["TwentyOne"][0] == HandOutcome(GameResult.PUSH, 0)  # 21 vs 21
+
     def test_all_players_bust_before_dealer_plays(self):
         """All players bust, dealer shouldn't need to play."""
         game = BlackjackGame([("Alice", 50), ("Bob", 75)])
@@ -368,10 +378,11 @@ class TestMultiPlayerScenarios:
         game.players[1].hands[0].is_finished = True
         
         # Even if dealer doesn't play, players lose
-        results = game.settle_all_bets()
-        assert results["Alice"][0] == HandOutcome(GameResult.LOSE, -50)
-        assert results["Bob"][0] == HandOutcome(GameResult.LOSE, -75)
-    
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Alice"][0] == HandOutcome(GameResult.LOSE, -50)
+        assert outcomes_by_name["Bob"][0] == HandOutcome(GameResult.LOSE, -75)
+
     def test_multiple_players_with_splits(self):
         """Two players, both split, different outcomes on each hand."""
         game = BlackjackGame([("Alice", 100), ("Bob", 100)])
@@ -421,22 +432,22 @@ class TestDoubleDownEdgeCases:
         """Player doubles down and wins."""
         game = BlackjackGame([("Bob", 100)])
         p = game.players[0]
-        
+
         # Setup good double situation
         p.hands[0].hand.cards = [Card("5", 5), Card("6", 6)]  # 11
-        
+
         result = game.double(p, 0)
-        
+
         # Setup dealer to lose
         game.dealer_hand.cards = [Card("10", 10), Card("6", 6)]  # 16
-        
+
         if not p.hands[0].hand.is_bust:
             game.play_dealer()
-            results = game.settle_all_bets()
-            
+            outcomes = game.resolve_bets()
+
             # If player didn't bust, check if bet was doubled
             assert p.hands[0].doubled is True
-    
+
     def test_cannot_double_after_hit(self):
         """Cannot double after already hitting."""
         game = BlackjackGame([("Charlie", 100)])
@@ -515,9 +526,10 @@ class TestPushScenarios:
         # Dealer 21 with 3 cards
         game.dealer_hand.cards = [Card("8", 8), Card("8", 8), Card("5", 5)]
         
-        results = game.settle_all_bets()
-        assert results["Alice"][0] == HandOutcome(GameResult.PUSH, 0)
-    
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Alice"][0] == HandOutcome(GameResult.PUSH, 0)
+
     def test_both_bust_player_loses(self):
         """If both bust, player still loses (loses immediately on bust)."""
         game = BlackjackGame([("Bob", 100)])
@@ -530,9 +542,10 @@ class TestPushScenarios:
         # Dealer also busts (but player already lost)
         game.dealer_hand.cards = [Card("10", 10), Card("Queen", 10), Card("King", 10)]
         
-        results = game.settle_all_bets()
-        assert results["Bob"][0] == HandOutcome(GameResult.LOSE, -100)
-    
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Bob"][0] == HandOutcome(GameResult.LOSE, -100)
+
     def test_both_have_same_non_21_value(self):
         """Both have same value under 21 is a push."""
         game = BlackjackGame([("Charlie", 100)])
@@ -544,8 +557,9 @@ class TestPushScenarios:
         
         game.dealer_hand.cards = [Card("Queen", 10), Card("9", 9)]
         
-        results = game.settle_all_bets()
-        assert results["Charlie"][0] == HandOutcome(GameResult.PUSH, 0)
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert outcomes_by_name["Charlie"][0] == HandOutcome(GameResult.PUSH, 0)
 
 
 class TestComplexGameFlows:
@@ -584,11 +598,12 @@ class TestComplexGameFlows:
         
         # Dealer plays and settle
         game.play_dealer()
-        results = game.settle_all_bets()
-        
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+
         # Should have results for both hands
-        assert len(results["Alice"]) == 2
-    
+        assert len(outcomes_by_name["Alice"]) == 2
+
     def test_sequential_actions_hit_hit_stand(self):
         """Player hits twice then stands."""
         game = BlackjackGame([("Bob", 100)])
@@ -637,12 +652,13 @@ class TestComplexGameFlows:
         
         # Resolve game
         game.play_dealer()
-        results = game.settle_all_bets()
-        
+        outcomes = game.resolve_bets()
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+
         # Verify all players have results
-        assert "Splitter" in results
-        assert "Doubler" in results
-        assert "Hitter" in results
-        
+        assert "Splitter" in outcomes_by_name
+        assert "Doubler" in outcomes_by_name
+        assert "Hitter" in outcomes_by_name
+
         # Splitter should have 2 hands
-        assert len(results["Splitter"]) == 2
+        assert len(outcomes_by_name["Splitter"]) == 2

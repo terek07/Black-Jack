@@ -123,18 +123,21 @@ class TestBlackjackGame:
     def test_settle_all_bets(self):
         players = [("Alice", 10), ("Bob", 20)]
         game = BlackjackGame(players)
-        
+
         game.stand(game.players[0], 0)
         game.stand(game.players[1], 0)
         game.play_dealer()
-        
-        results = game.settle_all_bets()
-        assert "Alice" in results
-        assert "Bob" in results
-        
+
+        outcomes = game.resolve_bets()
+        # Map outcomes to player names for compatibility with previous tests
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+
+        assert "Alice" in outcomes_by_name
+        assert "Bob" in outcomes_by_name
+
         for name in ["Alice", "Bob"]:
-            assert len(results[name]) > 0
-            for res in results[name]:
+            assert len(outcomes_by_name[name]) > 0
+            for res in outcomes_by_name[name]:
                 assert res.result in GameResult
                 assert isinstance(res.payout, int)
 
@@ -154,7 +157,9 @@ class TestBlackjackGame:
         game.play_dealer()
         
         # Settle bets
-        results = game.settle_all_bets()
-        assert "Alice" in results
-        assert len(results["Alice"]) > 0
-        assert results["Alice"][0].result in GameResult
+        outcomes = game.resolve_bets()
+        # Map to names and ensure at least one outcome exists
+        outcomes_by_name = {player.name: outcomes[i] for i, player in enumerate(game.players)}
+        assert "Alice" in outcomes_by_name
+        assert len(outcomes_by_name["Alice"]) > 0
+        assert outcomes_by_name["Alice"][0].result in GameResult

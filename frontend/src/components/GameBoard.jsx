@@ -55,8 +55,48 @@ function GameBoard({ gameId, initialGameState, onReset }) {
       const response = await fetch(`http://localhost:8000/api/game/${gameId}/resolve`, {
         method: 'POST'
       });
-      const data = await response.json();
-      setGameState(data);
+      const finalData = await response.json();
+
+      // If dealer drew additional cards, animate revealing them one by one.
+      const finalDealer = finalData.dealer_hand || [];
+      const currentDealer = gameState.dealer_hand || [];
+
+      // Helper to compute hand value including ace adjustment
+      const computeHandValue = (cards) => {
+        let total = 0;
+        let aces = 0;
+        for (const c of cards) {
+          total += c.value;
+          if (c.value === 11) aces += 1;
+        }
+        while (total > 21 && aces > 0) {
+          total -= 10;
+          aces -= 1;
+        }
+        return total;
+      };
+
+      if (finalDealer.length > currentDealer.length) {
+        // Start animation: reveal one card every 350ms (fast but visible)
+        const revealDelay = 450;
+        let displayed = [...currentDealer];
+
+        // Show hole card immediately if not already present
+        setGameState((gs) => ({ ...gs, dealer_hand: displayed, dealer_value: computeHandValue(displayed) }));
+
+        for (let i = currentDealer.length; i < finalDealer.length; i++) {
+          await new Promise((res) => setTimeout(res, revealDelay));
+          displayed = [...displayed, finalDealer[i]];
+          setGameState((gs) => ({ ...gs, dealer_hand: displayed, dealer_value: computeHandValue(displayed) }));
+        }
+
+        // Small pause before showing final results
+        await new Promise((res) => setTimeout(res, 300));
+        setGameState(finalData);
+      } else {
+        // No extra cards to reveal; set final state immediately
+        setGameState(finalData);
+      }
     } catch (error) {
       console.error('Error resolving game:', error);
     } finally {
@@ -206,7 +246,7 @@ function GameBoard({ gameId, initialGameState, onReset }) {
         ))}
       </div>
 
-      {gameState.game_over && (
+      {gameState.results && (
         <div className="game-over">
           <h2>Game Over!</h2>
           {gameState.results && gameState.results.map((result, idx) => (

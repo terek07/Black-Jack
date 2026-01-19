@@ -13,8 +13,5 @@ class InsuranceManager:
     def resolve(self, player: Player, dealer_has_blackjack: bool) -> int:
         if player.insurance_bet == 0:
             return 0
-        return (
-            player.insurance_bet * 2
-            if dealer_has_blackjack
-            else -player.insurance_bet
-        )
+        return   player.insurance_bet * 2 if dealer_has_blackjack else -player.insurance_bet
+

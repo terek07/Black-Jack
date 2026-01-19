@@ -1,5 +1,4 @@
 from engine.deck import Deck
-from engine.enums import TurnResult
 from engine.models import Player, BetHand, Hand
 from engine.insurance import InsuranceManager
 from engine.split import SplitManager
@@ -87,6 +86,7 @@ class BlackjackGame:
         return result
 
     def play_dealer(self):
+        # Delegate to TurnManager to perform dealer auto-play (hit until 17)
         self.turns.dealer_play(self.dealer_hand, self.deck)
 
     def resolve_insurance(self) -> dict:
@@ -110,13 +110,3 @@ class BlackjackGame:
 
     def place_insurance(self, player: Player, amount: int):
         return self.insurance.place(player, amount)
-
-    def settle_all_bets(self) -> dict:
-        results = {}
-        for p in self.players:
-            results[p.name] = []
-            for hand in p.hands:
-                results[p.name].append(
-                    self.payouts.resolve_hand(hand, self.dealer_hand)
-                )
-        return results
