@@ -16,11 +16,16 @@ function GameSetup({ onStartGame }) {
     }
   };
 
-  const updatePlayer = (index, field, value) => {
-    const updated = [...players];
-    updated[index][field] = field === 'bet' ? parseInt(value) || 0 : value;
-    setPlayers(updated);
-  };
+const updatePlayer = (index, field, value) => {
+  if (field === 'name' && players.some((p, i) => i !== index && p.name === value)) {
+    alert('Player names must be unique');
+    return;
+  }
+  const updated = [...players];
+  updated[index][field] = field === 'bet' ? parseInt(value) || 0 : value;
+  setPlayers(updated);
+};
+
 
   const handleStart = () => {
     if (players.every(p => p.name.trim() && p.bet > 0)) {

@@ -1,5 +1,5 @@
 from engine.deck import Deck
-from engine.models import Player, BetHand, Hand
+from engine.models import Player, BetHand, Hand, Card
 from engine.insurance import InsuranceManager
 from engine.split import SplitManager
 from engine.turns import TurnManager
@@ -27,7 +27,8 @@ class BlackjackGame:
             p.hands.append(bh)
             self.players.append(p)
 
-        self._initial_deal()
+        self._test_initial_deal()
+        # self._initial_deal()
         self._auto_finish_natural_blackjacks()
         self._advance_turn_if_needed()
 
@@ -36,6 +37,13 @@ class BlackjackGame:
             for p in self.players:
                 p.hands[0].hand.add(self.deck.draw())
             self.dealer_hand.add(self.deck.draw())
+
+    def _test_initial_deal(self):
+        for _ in range(2):
+            for p in self.players:
+                p.hands[0].hand.add(self.deck.draw())
+        self.dealer_hand.add(Card("Ace of Spades", 11))
+        self.dealer_hand.add(Card("10 of Spades", 10))
 
     def _advance_turn_if_needed(self):
         if self.current_player_index is None:
