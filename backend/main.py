@@ -55,18 +55,11 @@ class GameStateResponse(BaseModel):
     game_over: bool
 
 def card_to_dict(card: Card):
-    suit_map = {
-        'Hearts': 'Hearts',
-        'Diamonds': 'Diamonds',
-        'Clubs': 'Clubs',
-        'Spades': 'Spades'
-    }
-    
-    for suit_name in suit_map:
+    suits = ['Hearts','Diamonds','Clubs' ,'Spades']
+
+    for suit_name in suits:
         if suit_name in card.name:
             return {"suit": suit_name, "value": card.value}
-    
-    return {"suit": card.name, "value": card.value}
 
 def hand_to_dict(hand):
     return {
@@ -75,7 +68,6 @@ def hand_to_dict(hand):
         "is_blackjack": hand.is_blackjack,
         "is_bust": hand.is_bust
     }
-
 def bet_hand_to_dict(bet_hand: BetHand):
     return {
         "bet": bet_hand.bet,
@@ -93,15 +85,12 @@ def get_game_state(game_id: str, show_dealer_cards: bool = False):
     dealer_cards = game.dealer_hand.cards if show_dealer_cards else [game.dealer_hand.cards[0]]
     dealer_value = game.dealer_hand.value if show_dealer_cards else game.dealer_hand.cards[0].value
     
-    players_data = []
-    for player in game.players:
-        player_data = {
+    players_data = [{
             "name": player.name,
             "balance": player.balance,
             "hands": [bet_hand_to_dict(bh) for bh in player.hands],
             "insurance_bet": player.insurance_bet
-        }
-        players_data.append(player_data)
+        } for player in game.players]
     
     all_finished = all(
         all(bh.is_finished for bh in player.hands)

@@ -77,7 +77,7 @@ function GameBoard({ gameId, initialGameState, onReset }) {
       };
 
       if (finalDealer.length > currentDealer.length) {
-        // Start animation: reveal one card every 350ms (fast but visible)
+        // Start animation: reveal one card every 450ms (fast but visible)
         const revealDelay = 450;
         let displayed = [...currentDealer];
 
