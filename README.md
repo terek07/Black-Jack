@@ -1,150 +1,102 @@
-# Blackjack Web Application
+# Blackjack Web App (FastAPI + React)
 
-A full-stack Blackjack game with FastAPI backend and React frontend.
+## Overview
+Pełny stack: React (Vite) frontend + FastAPI backend + czysty Python engine.
 
-## Features
+- **Frontend:** React (Vite), dynamiczne UI, polling REST API
+- **Backend:** FastAPI, REST API, CORS, pamięć RAM (brak bazy)
+- **Engine:** Python, immutable dataclasses, logika blackjacka
 
-- ✨ Multiplayer support (up to 4 players)
-- 💰 Imaginary betting system
-- 🎴 Classic blackjack rules (hit, stand, double, split)
-- 🛡️ Insurance betting when dealer shows Ace
-- 🎨 Modern, mobile-friendly UI
-- 🃏 Simple card design with suit symbols
+## Szybki start (Quickstart)
 
-## Tech Stack
+### 1. Uruchom backend
 
-**Backend:**
-- FastAPI (Python web framework)
-- Pydantic (data validation)
-- Uvicorn (ASGI server)
-
-**Frontend:**
-- React 18
-- Vite (build tool)
-- CSS3 (styling)
-
-## Project Structure
-
-```
-.
-├── backend/
-│   ├── main.py           # FastAPI application
-│   └── requirements.txt  # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/   # React components
-│   │   ├── App.jsx       # Main app component
-│   │   └── index.css     # Global styles
-│   └── package.json      # Node dependencies
-├── game.py               # Core game logic
-├── models.py             # Data models
-├── deck.py               # Deck management
-├── turns.py              # Turn manager
-├── split.py              # Split manager
-├── insurance.py          # Insurance manager
-└── payouts.py            # Payout resolver
-```
-
-## Installation
-
-### Prerequisites
-
-- Python 3.8+
-- Node.js 16+
-- npm
-
-### Backend Setup
-
-1. Install Python dependencies:
-```bash
-pip install -r backend/requirements.txt
-```
-
-2. Start the backend server:
 ```bash
 cd backend
 uvicorn main:app --reload --port 8000
 ```
 
-The API will be available at `http://localhost:8000`
-API documentation: `http://localhost:8000/docs`
+- Domyślnie backend nasłuchuje na porcie 8000
+- Jeśli używasz Codespaces: ustaw port 8000 jako **Public** w zakładce "Ports"
 
-### Frontend Setup
+### 2. Uruchom frontend
 
-1. Install Node dependencies:
 ```bash
 cd frontend
-npm install
-```
-
-2. Start the development server:
-```bash
+export VITE_API_BASE_URL=https://<twoj-codespace>-8000.app.github.dev  # (w Codespaces)
 npm run dev
 ```
+- Lokalnie: nie ustawiaj zmiennej, domyślnie łączy się z localhost:8000
+- W Codespaces: podaj pełny adres backendu (patrz adres w "Ports")
 
-The app will be available at `http://localhost:5173`
+### 3. Otwórz aplikację
 
-## How to Play
+- Lokalnie: http://localhost:5173
+- Codespaces: link do portu 5173 (np. https://<twoj-codespace>-5173.app.github.dev)
 
-1. **Setup**: Enter player names and initial bets (1-4 players)
-2. **Insurance**: If dealer shows an Ace, you can place insurance (up to half your bet)
-3. **Actions**:
-   - **Hit**: Draw another card
-   - **Stand**: End your turn
-   - **Double**: Double your bet and draw one final card (only with 2 cards)
-   - **Split**: Split matching cards into two hands (only with 2 cards of same value)
-4. **Winning**: Beat the dealer without going over 21!
+## Najczęstsze problemy
 
-## Game Rules
+- **CORS error:** Upewnij się, że port 8000 jest Public w Codespaces
+- **Nie działa API:** Sprawdź czy oba serwery są uruchomione i adresy się zgadzają
 
-- Dealer stands on soft 17
-- Blackjack (natural 21) pays 3:2 and beats regular 21
-- Insurance pays 2:1 when dealer has blackjack
-- Doubled hands pay double winnings
-- Aces count as 11 or 1 (automatically adjusted)
-
-## API Endpoints
-
-- `POST /api/game/start` - Start new game
-- `POST /api/game/{game_id}/hit` - Hit action
-- `POST /api/game/{game_id}/stand` - Stand action
-- `POST /api/game/{game_id}/double` - Double action
-- `POST /api/game/{game_id}/split` - Split action
-- `POST /api/game/{game_id}/insurance` - Place insurance
-- `POST /api/game/{game_id}/resolve` - Resolve game
-- `GET /api/game/{game_id}` - Get game state
-
-## Testing
-
-Run the existing test suite:
+## Testy
 
 ```bash
 pytest
 ```
+- 100% pokrycia testami (unit + integracyjne)
 
-Run with coverage:
+## Architektura
 
-```bash
-pytest --cov=. --cov-report=html
-```
+- **frontend/src/**: React, Vite, komponenty UI
+- **backend/main.py**: FastAPI, REST API, CORS
+- **engine/**: logika gry, modele, menedżery
+- **tests/**: testy jednostkowe i integracyjne
 
-## Development
+## API (REST)
 
-- Backend runs on port 8000
-- Frontend runs on port 5173
-- CORS is configured to allow local development
-- Hot reload enabled for both backend and frontend
+- `POST /api/game/start` – start nowej gry
+- `POST /api/game/{game_id}/hit|stand|double|split|insurance` – akcje gracza (wymaga `player_index`, `hand_index`)
+- `POST /api/game/{game_id}/resolve` – dociągnięcie krupiera + rozliczenie
+- `GET /api/game/{game_id}` – aktualny stan gry (dealer pokazuje tylko jedną kartę do końca tury graczy)
 
-## Future Enhancements
+### Struktura odpowiedzi gry
+- `game_id`: identyfikator gry
+- `players[]`: `name`, `balance`, `insurance_bet`, `hands[]` (`bet`, `doubled`, `is_finished`, `cards[]`, `value`, `is_blackjack`, `is_bust`)
+- `dealer_hand`: lista kart (ukryta do czasu rozliczenia)
+- `current_player_index`: indeks aktywnego gracza lub `null` gdy tury skończone
+- `game_over`: true, gdy wszystkie ręce zakończone
+- przy `/resolve`: `results[]` (payouty, blackjack/bust, saldo końcowe)
 
-- [ ] Persistent player balances
-- [ ] Game history
-- [ ] Sound effects
-- [ ] Animations
-- [ ] Multiple deck support
-- [ ] Betting limits configuration
-- [ ] Tournament mode
+## Konfiguracja i porty
 
-## License
+- Backend: port **8000** (`uvicorn main:app --reload --port 8000`)
+- Frontend: port **5173** (`npm run dev`)
+- Codespaces: ustaw port 8000 jako **Public** (inaczej proxy zablokuje CORS)
+- Zmienna `VITE_API_BASE_URL` (frontend): pełny URL backendu (np. `https://<codespace>-8000.app.github.dev`); lokalnie nie ustawiaj – użyje `http://localhost:8000`
+- CORS: backend obecnie zezwala na wszystkie originy (credentials = false); zmień w [backend/main.py](backend/main.py) w razie potrzeby
 
-MIT
+## Silnik gry (engine)
+
+- [engine/models.py](engine/models.py): `Card`, `Hand` (liczenie asów 11→1), `BetHand`, `Player`
+- [engine/game.py](engine/game.py): orkiestracja, kolejki tur, autostand przy blackjacku
+- [engine/turns.py](engine/turns.py): `hit`, `stand`, `double` (double kończy turę)
+- [engine/split.py](engine/split.py): walidacja i rozbijanie par (dobiera po jednej karcie)
+- [engine/insurance.py](engine/insurance.py): ubezpieczenie do 1/2 stawki, wypłata 2:1
+- [engine/payouts.py](engine/payouts.py): zasady wypłat (blackjack 3:2, dealer stoi na soft 17)
+
+## Reguły blackjacka (skrót)
+
+- Blackjack (2‑karty 21) bije inne 21, płaci 3:2
+- Dealer stoi na soft 17
+- Double tylko przy 2 kartach; kończy turę
+- Split wymaga pary o tej samej wartości, każda ręka dostaje jedną nową kartę
+- Insurance dostępne gdy dealer pokazuje Asa, max 1/2 zakładu, płaci 2:1 gdy dealer ma blackjacka
+
+## Testy i pokrycie
+
+- Uruchom wszystkie testy: `pytest`
+- Raport z pokrycia: `pytest --cov=. --cov-report=html` (wynik w `htmlcov/`)
+
+## Autor
+- terek07

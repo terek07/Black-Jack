@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './App.css';
 import GameSetup from './components/GameSetup';
 import GameBoard from './components/GameBoard';
+import { API_BASE_URL } from './config';
 
 function App() {
   const [gameId, setGameId] = useState(null);
@@ -9,7 +10,7 @@ function App() {
 
   const startNewGame = async (players) => {
     try {
-      const response = await fetch('http://localhost:8000/api/game/start', {
+      const response = await fetch(`${API_BASE_URL}/api/game/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ players })

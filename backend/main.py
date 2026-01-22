@@ -15,10 +15,11 @@ from engine.enums import GameResult
 
 app = FastAPI(title="Blackjack Game API")
 
+# Add CORS middleware FIRST with wildcard
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -264,5 +265,9 @@ async def get_game(game_id: str):
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "cors_origins": cors_origins}
+
+@app.get("/debug/cors")
+async def debug_cors():
+    return {"allowed_origins": cors_origins, "env_cors_origins": os.getenv("CORS_ORIGINS", "not set")}
 #refres

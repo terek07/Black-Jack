@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './GameBoard.css';
 import Card from './Card';
+import { API_BASE_URL } from '../config';
 
 function GameBoard({ gameId, initialGameState, onReset }) {
   const [gameState, setGameState] = useState(initialGameState);
@@ -35,7 +36,7 @@ function GameBoard({ gameId, initialGameState, onReset }) {
     setLoading(true);
     try {
       const body = { game_id: gameId, player_index: playerIndex, hand_index: handIndex, ...extraData };
-      const response = await fetch(`http://localhost:8000/api/game/${gameId}/${action}`, {
+      const response = await fetch(`${API_BASE_URL}/api/game/${gameId}/${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -52,7 +53,7 @@ function GameBoard({ gameId, initialGameState, onReset }) {
   const resolveGame = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8000/api/game/${gameId}/resolve`, {
+      const response = await fetch(`${API_BASE_URL}/api/game/${gameId}/resolve`, {
         method: 'POST'
       });
       const finalData = await response.json();
