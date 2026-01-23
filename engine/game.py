@@ -27,8 +27,8 @@ class BlackjackGame:
             p.hands.append(bh)
             self.players.append(p)
 
-        self._test_initial_deal()
-        # self._initial_deal()
+        # self._test_initial_deal()
+        self._initial_deal()
         self._auto_finish_natural_blackjacks()
         self._advance_turn_if_needed()
 
@@ -38,6 +38,7 @@ class BlackjackGame:
                 p.hands[0].hand.add(self.deck.draw())
             self.dealer_hand.add(self.deck.draw())
 
+    # to showcase insurance without waiting for black  jack
     def _test_initial_deal(self):
         for _ in range(2):
             for p in self.players:

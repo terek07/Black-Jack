@@ -23,7 +23,7 @@ uvicorn main:app --reload --port 8000
 
 ```bash
 cd frontend
-export VITE_API_BASE_URL=https://<twoj-codespace>-8000.app.github.dev  # (w Codespaces)
+export VITE_API_BASE_URL=https://ubiquitous-space-waffle-pxj574g6xgph9jw-8000.app.github.dev  # (w Codespaces)
 npm run dev
 ```
 - Lokalnie: nie ustawiaj zmiennej, domyślnie łączy się z localhost:8000

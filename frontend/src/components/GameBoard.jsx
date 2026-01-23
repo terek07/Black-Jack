@@ -27,6 +27,17 @@ function GameBoard({ gameId, initialGameState, onReset }) {
   }, [initialGameState]);
 
   useEffect(() => {
+    // Reset insurance prompt when current player changes
+    if (gameState) {
+      const dealerUpCard = gameState.dealer_hand[0];
+      if (dealerUpCard && dealerUpCard.value === 11) {
+        setShowInsurance(true);
+        setInsuranceAmount('');
+      }
+    }
+  }, [gameState?.current_player_index]);
+
+  useEffect(() => {
     if (gameState?.game_over && !gameState.results) {
       resolveGame();
     }
