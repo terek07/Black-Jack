@@ -1,102 +1,175 @@
 # Blackjack Web App (FastAPI + React)
 
-## Overview
-Pełny stack: React (Vite) frontend + FastAPI backend + czysty Python engine.
+A full-stack Blackjack web application built for learning and demonstration purposes.
 
-- **Frontend:** React (Vite), dynamiczne UI, polling REST API
-- **Backend:** FastAPI, REST API, CORS, pamięć RAM (brak bazy)
-- **Engine:** Python, immutable dataclasses, logika blackjacka
+- Frontend: React (Vite) — interactive UI, communicates with backend via REST.
+- Backend: FastAPI — exposes a small REST API and holds in-memory game state.
+- Game engine: Pure Python — immutable dataclasses and clear manager classes implement Blackjack rules.
 
-## Szybki start (Quickstart)
+This repository implements the classic Blackjack ruleset (dealer stands on soft 17, natural blackjack pays 3:2, split/double/insurance are supported) and is designed to be easy to run locally, test, and extend.
 
-### 1. Uruchom backend
+---
 
-```bash
+## Table of Contents
+
+- [Features](#features)
+- [Technologies](#technologies)
+- [Download \& Setup](#download--setup)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Engine Design \& Key Concepts](#engine-design--key-concepts)
+- [API Endpoints](#api-endpoints)
+- [Testing](#testing)
+
+---
+
+
+## Features
+
+- Multiplayer support (1–4 players) in a single game session
+- Player actions: hit, stand, double, split, and place insurance
+- Dealer behavior: stands on soft 17
+- Natural blackjack pays 3:2
+- In-memory game state (no database) — lightweight and easy to run
+- Full unit and integration test coverage
+
+## Technologies
+
+- Frontend: React, Vite, JavaScript
+- Backend: Python, FastAPI, Uvicorn
+- Game engine: Python 3 dataclasses, enums, and standard library only
+- Testing: pytest
+
+---
+
+## Download & Setup
+
+Prerequisites:
+
+- Python 3.10+ (3.12 recommended)
+- Node.js 16+ and npm
+
+Clone the repository:
+
+```powershell
+git clone https://github.com/<your-username>/Black-Jack.git
+cd Black-Jack
+```
+
+Install backend dependencies:
+
+```powershell
+cd backend; python -m pip install -r requirements.txt
+```
+
+Install frontend dependencies:
+
+```powershell
+cd ..\frontend; npm install
+```
+
+Notes:
+- The backend runs on port 8000 by default. The frontend dev server runs on port 5173.
+- CORS is configured for local development. If you change ports, update the CORS origins in `backend/main.py` or set `VITE_API_BASE_URL` for the frontend.
+
+---
+
+## Quick Start
+
+Run the backend (from the `backend` directory):
+
+```powershell
 cd backend
 uvicorn main:app --reload --port 8000
 ```
 
-- Domyślnie backend nasłuchuje na porcie 8000
-- Jeśli używasz Codespaces: ustaw port 8000 jako **Public** w zakładce "Ports"
+Run the frontend (from the `frontend` directory):
 
-### 2. Uruchom frontend
-
-```bash
+```powershell
 cd frontend
-export VITE_API_BASE_URL=https://ubiquitous-space-waffle-pxj574g6xgph9jw-8000.app.github.dev  # (w Codespaces)
 npm run dev
 ```
-- Lokalnie: nie ustawiaj zmiennej, domyślnie łączy się z localhost:8000
-- W Codespaces: podaj pełny adres backendu (patrz adres w "Ports")
 
-### 3. Otwórz aplikację
+Open the UI in your browser at:
 
-- Lokalnie: http://localhost:5173
-- Codespaces: link do portu 5173 (np. https://<twoj-codespace>-5173.app.github.dev)
+- http://localhost:5173 (frontend)
+- API docs (FastAPI): http://localhost:8000/docs
 
-## Najczęstsze problemy
+---
 
-- **CORS error:** Upewnij się, że port 8000 jest Public w Codespaces
-- **Nie działa API:** Sprawdź czy oba serwery są uruchomione i adresy się zgadzają
+## Project Structure
 
-## Testy
+Top-level layout:
 
-```bash
-pytest
+- `frontend/` — React + Vite application (UI components, assets)
+- `backend/` — FastAPI app exposing REST endpoints
+- `engine/` — Python package with game logic, models and managers
+- `tests/` — Unit and integration tests (pytest)
+
+Important source files (high-level):
+
+- `frontend/src/App.jsx` — root React component and session state
+- `frontend/src/components/GameBoard.jsx` — main game UI and polling logic
+- `backend/main.py` — FastAPI application, in-memory `games` store, JSON serialization helpers
+- `engine/models.py` — dataclasses: `Card`, `Hand`, `BetHand`, `Player`
+- `engine/game.py` — `BlackjackGame` orchestrator and facade methods
+- `engine/turns.py`, `engine/split.py`, `engine/insurance.py`, `engine/payouts.py` — specialized manager classes
+
+---
+
+## Engine Design & Key Concepts
+
+Design goals:
+
+- Separation of concerns: UI, API, and domain logic are separate and easy to reason about.
+- Immutability: core value objects (`Card`, `Hand`) are frozen dataclasses to avoid accidental mutation.
+- Single responsibility: managers encapsulate actions (turns, splits, insurance, payouts).
+
+Key behaviors and rules implemented:
+
+- Ace logic: Aces count as 11 until the total would exceed 21, then are downgraded to 1 (handled in `Hand.value`).
+- Blackjack detection: Only a 2-card 21 is considered a natural blackjack (beats other 21s).
+- Double: Allowed only on the initial 2-card hand; it doubles the bet, draws exactly one card, and finishes the hand.
+- Split: Allowed when the two starting cards have equal value; creates two hands with equal bets and one extra card drawn for each.
+- Insurance: Available when dealer shows an Ace; max insurance is half the hand bet and pays 2:1 on dealer blackjack.
+- Dealer play: Dealer hits until hand value is 17 or higher and stands on soft 17.
+
+Deck:
+
+- `engine/deck.py` provides a shuffled 52-card deck. `draw()` pops from the end — the deck is finite and can be exhausted in long tests or custom scenarios.
+
+Error handling and validation:
+
+- Managers raise `ValueError` for invalid actions (e.g., illegal split/double/insurance).
+- `can_<action>()` methods exist to check preconditions before performing actions.
+
+---
+
+## API Endpoints
+
+Base path: `/api/game`
+
+- `POST /api/game/start` — create a new game; payload: list of player name + starting bet
+- `GET /api/game/{game_id}` — get current game state (dealer first card hidden until players finish)
+- `POST /api/game/{game_id}/hit|stand|double|split|insurance` — player actions (require `player_index` and `hand_index` in body)
+- `POST /api/game/{game_id}/resolve` — resolves dealer play and settles bets
+
+Response shape highlights:
+
+- `players[]`: each player has `name`, `balance`, `insurance_bet`, and `hands[]` with `bet`, `doubled`, `is_finished`, `cards[]`, `value`, `is_blackjack`, `is_bust`.
+- `dealer_hand`: list of cards (first card may be hidden depending on `show_dealer_cards` flag)
+- `current_player_index`: index of the player whose turn is active (or `null` if players are done)
+- `game_over`: boolean flag indicating the game finished and results are final
+
+---
+
+## Testing
+
+Run the full test suite with pytest from the project root:
+
+```powershell
+pytest -q
 ```
-- 100% pokrycia testami (unit + integracyjne)
 
-## Architektura
-
-- **frontend/src/**: React, Vite, komponenty UI
-- **backend/main.py**: FastAPI, REST API, CORS
-- **engine/**: logika gry, modele, menedżery
-- **tests/**: testy jednostkowe i integracyjne
-
-## API (REST)
-
-- `POST /api/game/start` – start nowej gry
-- `POST /api/game/{game_id}/hit|stand|double|split|insurance` – akcje gracza (wymaga `player_index`, `hand_index`)
-- `POST /api/game/{game_id}/resolve` – dociągnięcie krupiera + rozliczenie
-- `GET /api/game/{game_id}` – aktualny stan gry (dealer pokazuje tylko jedną kartę do końca tury graczy)
-
-### Struktura odpowiedzi gry
-- `game_id`: identyfikator gry
-- `players[]`: `name`, `balance`, `insurance_bet`, `hands[]` (`bet`, `doubled`, `is_finished`, `cards[]`, `value`, `is_blackjack`, `is_bust`)
-- `dealer_hand`: lista kart (ukryta do czasu rozliczenia)
-- `current_player_index`: indeks aktywnego gracza lub `null` gdy tury skończone
-- `game_over`: true, gdy wszystkie ręce zakończone
-- przy `/resolve`: `results[]` (payouty, blackjack/bust, saldo końcowe)
-
-## Konfiguracja i porty
-
-- Backend: port **8000** (`uvicorn main:app --reload --port 8000`)
-- Frontend: port **5173** (`npm run dev`)
-- Codespaces: ustaw port 8000 jako **Public** (inaczej proxy zablokuje CORS)
-- Zmienna `VITE_API_BASE_URL` (frontend): pełny URL backendu (np. `https://<codespace>-8000.app.github.dev`); lokalnie nie ustawiaj – użyje `http://localhost:8000`
-- CORS: backend obecnie zezwala na wszystkie originy (credentials = false); zmień w [backend/main.py](backend/main.py) w razie potrzeby
-
-## Silnik gry (engine)
-
-- [engine/models.py](engine/models.py): `Card`, `Hand` (liczenie asów 11→1), `BetHand`, `Player`
-- [engine/game.py](engine/game.py): orkiestracja, kolejki tur, autostand przy blackjacku
-- [engine/turns.py](engine/turns.py): `hit`, `stand`, `double` (double kończy turę)
-- [engine/split.py](engine/split.py): walidacja i rozbijanie par (dobiera po jednej karcie)
-- [engine/insurance.py](engine/insurance.py): ubezpieczenie do 1/2 stawki, wypłata 2:1
-- [engine/payouts.py](engine/payouts.py): zasady wypłat (blackjack 3:2, dealer stoi na soft 17)
-
-## Reguły blackjacka (skrót)
-
-- Blackjack (2‑karty 21) bije inne 21, płaci 3:2
-- Dealer stoi na soft 17
-- Double tylko przy 2 kartach; kończy turę
-- Split wymaga pary o tej samej wartości, każda ręka dostaje jedną nową kartę
-- Insurance dostępne gdy dealer pokazuje Asa, max 1/2 zakładu, płaci 2:1 gdy dealer ma blackjacka
-
-## Testy i pokrycie
-
-- Uruchom wszystkie testy: `pytest`
-- Raport z pokrycia: `pytest --cov=. --cov-report=html` (wynik w `htmlcov/`)
-
-## Autor
-- terek07
+- The test suite includes unit tests for engine components and integration tests that exercise end-to-end flows.
+- Tests create Card instances directly for deterministic scenarios (preferred to avoid deck state coupling).
